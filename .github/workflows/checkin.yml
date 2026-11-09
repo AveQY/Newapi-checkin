@@ -44,6 +44,8 @@ jobs:
           SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
           FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
           FEISHU_SECRET: ${{ secrets.FEISHU_SECRET }}
+          # 仅失败时才推送通知（全部成功则静默）
+          NOTIFY_ONLY_FAILURE: "1"
           EMAIL_SMTP_HOST: ${{ secrets.EMAIL_SMTP_HOST }}
           EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
