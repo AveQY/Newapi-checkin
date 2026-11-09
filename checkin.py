@@ -956,34 +956,47 @@ def main():
     print('=' * 50)
     
     # 通知发送（NOTIFY_ONLY_FAILURE=1 时全部成功则跳过）
-    notify_only_fail = os.environ.get('NOTIFY_ONLY_FAILURE', '').strip().lower() in ('1', 'true', 'yes')
-    if notify_only_fail and fail_count == 0:
-        print('\n[通知] 全部签到成功，已开启「仅失败时推送」，跳过通知')
-    elif True:
-        pass
+    # NOTIFY_ONLY_FAILURE 取值：
+    #   'all'            -> 只有全部账号都失败才推送（默认推荐）
+    #   '1'/'true'/'yes' -> 任意一个失败就推送
+    #   其它/空          -> 每次都推送
+    notify_mode = os.environ.get('NOTIFY_ONLY_FAILURE', '').strip().lower()
+    notify_only_fail = notify_mode in ('1', 'true', 'yes')
+    notify_only_all_fail = notify_mode == 'all'
 
-    if send_checkin_notification and not (notify_only_fail and fail_count == 0):
+    skip_notify = False
+    if notify_only_all_fail and fail_count < len(accounts):
+        skip_notify = True
+        if fail_count == 0:
+            print(f'\n[通知] 全部 {len(accounts)} 个账号签到成功，已开启「仅全部失败时推送」，跳过通知')
+        else:
+            print(f'\n[通知] 部分账号成功（成功 {success_count}/失败 {fail_count}），已开启「仅全部失败时推送」，跳过通知')
+    elif notify_only_fail and fail_count == 0:
+        skip_notify = True
+        print('\n[通知] 全部签到成功，已开启「仅失败时推送」，跳过通知')
+
+    if send_checkin_notification and not skip_notify:
         print('正在发送钉钉通知...')
         send_checkin_notification(checkin_results, execution_time)
     elif os.environ.get('DINGTALK_WEBHOOK'):
         print('[警告] 已配置 DINGTALK_WEBHOOK 但无法导入通知模块')
 
     # 发送邮件通知
-    if send_email_notification and os.environ.get('EMAIL_SMTP_HOST') and not (notify_only_fail and fail_count == 0):
+    if send_email_notification and os.environ.get('EMAIL_SMTP_HOST') and not skip_notify:
         print('正在发送邮件通知...')
         send_email_notification(checkin_results, execution_time)
     elif os.environ.get('EMAIL_SMTP_HOST'):
         print('[警告] 已配置邮件参数但无法导入通知模块')
 
     # 发送 ServerChan 通知
-    if send_serverchan_notification and not (notify_only_fail and fail_count == 0):
+    if send_serverchan_notification and not skip_notify:
         print('正在发送 ServerChan 通知...')
         send_serverchan_notification(checkin_results, execution_time)
     elif os.environ.get('SERVERCHAN_SENDKEY'):
         print('[警告] 已配置 SERVERCHAN_SENDKEY 但无法导入通知模块')
 
     # 发送飞书通知
-    if send_feishu_notification and not (notify_only_fail and fail_count == 0):
+    if send_feishu_notification and not skip_notify:
         print('正在发送飞书通知...')
         send_feishu_notification(checkin_results, execution_time)
     elif os.environ.get('FEISHU_WEBHOOK'):
