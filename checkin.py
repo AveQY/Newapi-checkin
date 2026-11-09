@@ -27,6 +27,11 @@ except ImportError:
     send_checkin_notification = None
 
 try:
+    from feishu_notifier import send_checkin_notification as send_feishu_notification
+except ImportError:
+    send_feishu_notification = None
+
+try:
     from notifier import send_email_notification, send_serverchan_notification
 except ImportError:
     send_email_notification = None
@@ -976,6 +981,13 @@ def main():
         send_serverchan_notification(checkin_results, execution_time)
     elif os.environ.get('SERVERCHAN_SENDKEY'):
         print('[警告] 已配置 SERVERCHAN_SENDKEY 但无法导入通知模块')
+
+    # 发送飞书通知
+    if send_feishu_notification and not (notify_only_fail and fail_count == 0):
+        print('正在发送飞书通知...')
+        send_feishu_notification(checkin_results, execution_time)
+    elif os.environ.get('FEISHU_WEBHOOK'):
+        print('[警告] 已配置 FEISHU_WEBHOOK 但无法导入通知模块')
 
     # 回写 .env（仅限从 .env 加载且 session 有更新的本地运行）
     if from_env_file and session_updated and not os.environ.get('GITHUB_ACTIONS'):
